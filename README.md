@@ -1,140 +1,249 @@
-# 🚀 CP4 - 2TDS — Clean Code, DDD e Clean Architecture com .NET 8
+## 🚀 MotoSecurityX — Challenge_.net (2TDS 2025)
 
-API do Checkpoint 4, baseada no domínio **Mottu/MotoSecurity**. O projeto aplica **DDD**, **Clean Architecture** e boas práticas de **Clean Code**.
+Clean Architecture + DDD + EF Core + Swagger (ASP.NET Core 8)
+
+API para controle e monitoramento de motos, pátios e usuários.
+O projeto aplica Clean Architecture, DDD (Entidades ricas + VO) e boas práticas de Clean Code.
 
 ## 👥 Integrantes do Grupo
-- **Caio Henrique** – RM: 554600  
-- **Carlos Eduardo** – RM: 555223  
-- **Antônio Lino** – RM: 554518
 
----
+Caio Henrique – RM: 554600
+Carlos Eduardo – RM: 555223
+Antônio Lino – RM: 554518
 
-## 🎯 Objetivo
-API Web para controle e monitoramento de motos e pátios (**MotoSecurityX**) usando .NET 8, EF Core, Sqlite e Swagger, com organização em camadas e modelagem orientada a domínio.
+## 🎯 Objetivo e Domínio
 
----
+O domínio simula operações da Mottu:
+
+  Usuários: administradores/operadores do sistema.
+
+  Pátios: unidades que recebem/armazenam motos.
+
+  Motos: possuem Placa (Value Object), Modelo e podem estar dentro ou fora de um pátio.
+
+  **Regras:** 
+
+    - Placa única (constraint UNIQUE).
+
+    - Email de usuário único (constraint UNIQUE).
+
+    - Entrada/saída de motos em pátios via métodos de comportamento no domínio.
+  
+  **Benefício de negócio:** 
+    visibilidade de ativos, rastreio de alocação por pátio e gestão de usuários.
 
 ## 🧭 Arquitetura (Camadas)
 
-CP4.MotoSecurityX.Api/ -> Controllers, Program, Swagger, appsettings
-CP4.MotoSecurityX.Application/ -> Use cases (Handlers), DTOs
-CP4.MotoSecurityX.Domain/ -> Entidades, Value Objects, Interfaces (Repos)
-CP4.MotoSecurityX.Infrastructure/ -> EF Core (DbContext, Migrations), Repos EF, DI
+CP4.MotoSecurityX.Api/ -> Controllers, Program.cs, Swagger, appsettings 
+CP4.MotoSecurityX.Application/ -> Use cases (Handlers), DTOs 
+CP4.MotoSecurityX.Domain/ -> Entidades, Value Objects, Interfaces (Repos) 
+CP4.MotoSecurityX.Infrastructure/ -> EF Core (DbContext, Migrations), Repositórios, DI
 
-yaml
-Copiar código
+**Princípios aplicados:**
 
-**Princípios aplicados**
-- **Inversão de Dependência**: interfaces de repositório no Domain; implementações na Infrastructure.
-- **Baixo acoplamento** entre camadas; a API não referencia EF diretamente.
-- **Regras de negócio** concentradas no domínio/use cases.
+  - Inversão de Dependência: interfaces no Domain; implementações no Infrastructure.
+  
+  - Baixo acoplamento entre camadas; a API não referencia EF diretamente.
+  
+  - Regra de negócio no domínio (métodos em entidades) + use cases no Application.
 
----
+  - Clean Code: SRP/DRY/KISS/YAGNI, nomes claros, controllers finos.
 
 ## 🧩 Modelagem de Domínio (DDD)
-- **Entidades**: `Moto`, `Patio`  
-- **Agregado Raiz**: `Patio` (relação 1-N com `Motos`)  
-- **Value Object**: `Placa` (mapeada como *owned type*; índice único na tabela de `Motos`)  
-- **Regras (exemplos)**:
-  - Placa única
-  - Moto pode estar associada a um pátio (FK opcional)
-  - (Recomendado) Métodos de comportamento como `Patio.AdicionarMoto(...)`, `Moto.EntrarNoPatio(...)`
 
----
+- Entidades:
+
+    Moto (rich model): 
+      
+      EntrarNoPatio(Guid patioId) 
+      
+      SairDoPatio() 
+      
+      AtualizarModelo(string)
+
+      AtualizarPlaca(string)
+
+    Patio (Agregado Raiz): 
+    
+      Mantém coleção de motos via navegação EF.
+
+- Value Object:
+
+    Placa: normalizada (ex.: "ABC1D23"), validada no construtor, mapeada como owned type no EF com índice único.
+
+✅ Status atual: 
+
+  3 entidades implementadas (Usuário, Pátio, Moto)
+
+  1 VO (Placa)
+
+  CRUD completo, paginação, HATEOAS, Swagger documentado com exemplos.
+
+🧱 Backlog de evolução futura: incluir entidade extra (ex.: Ocorrencia ou Manutencao) para enriquecer o domínio.
 
 ## 🔧 Requisitos
-- .NET 8 SDK
-- (Opcional) `dotnet-ef` como **ferramenta local** (manifesto já em `.config/dotnet-tools.json`)
 
----
+.NET 8 SDK
+
+(Opcional) dotnet-ef (já incluso no dotnet-tools.json)
+
+SQLite (desenvolvimento) ou Azure SQL (produção)
 
 ## ▶️ Como executar localmente
 
-Na **raiz** do repositório:
+- Na raiz do repositório:
 
-```powershell
-# Restaurar e compilar
-dotnet restore
-dotnet build
+  # Restaurar e compilar
+    
+    dotnet restore
+    dotnet build
 
-# (uma vez) restaurar a ferramenta local dotnet-ef
-dotnet tool restore
+  # (uma vez) restaurar a ferramenta local dotnet-ef
+    
+    dotnet tool restore
 
-# Criar/atualizar o banco Sqlite (se ainda não existir)
-dotnet ef database update `
-  -p .\CP4.MotoSecurityX.Infrastructure\ `
-  -s .\CP4.MotoSecurityX.Api\
+  # Criar/atualizar o banco Sqlite (se ainda não existir)
+    dotnet ef database update -p .\CP4.MotoSecurityX.Infrastructure\ -s .\CP4.MotoSecurityX.Api\
 
-# Subir a API
-dotnet run --project .\CP4.MotoSecurityX.Api\
-Swagger: a URL exata aparece no terminal (ex.: http://localhost:5102/swagger).
+  # Subir a API (perfil HTTPS)
+    
+    dotnet run --project .\CP4.MotoSecurityX.Api\ --launch-profile https
 
-Banco: Sqlite (Data Source=motosecurityx.db no appsettings.json da API).
-```
+    Swagger: https://localhost:7102/swagger (a porta pode variar, confira no terminal)
+
+    Banco: motosecurityx.db no appsettings.json
 
 ## 🌐 Endpoints (exemplos)
-Criar Pátio
-`POST` /api/patios
+  
+### Usuários
+- Criar
+  POST /api/usuarios
+  ```json
+  {
+    "nome": "Admin",
+    "email": "admin@mottu.com"
+  }
+  ```
+- Listar
+  GET /api/usuarios?page=1&pageSize=5
 
-```json
-{
-  "nome": "Pátio Central",
-  "endereco": "Rua 1"
-}
-```
+- Obter por ID
+  GET /api/usuarios/{id}
 
-Criar Moto
-`POST` /api/motos
+- Atualizar
+  PUT /api/usuarios/{id}
+  ```json
+  {
+    "nome": "Admin Atualizado",
+    "email": "admin2@mottu.com"
+  }
+  ```
+- Deletar
+  DELETE /api/usuarios/{id}
 
-```json
-{
-  "placa": "ABC1D23",
-  "modelo": "Mottu 110i"
-}
-```
+### Pátios
+- Criar
+  POST /api/patios
+  ```json
+  {
+    "nome": "Pátio Central",
+    "endereco": "Rua das Entregas, 100"
+  }
+  ```
+- Listar
+  GET /api/patios?page=1&pageSize=5
 
-Listar Motos
-`GET` /api/motos
+- Obter por ID
+  GET /api/patios/{id}
 
-Obter Moto por Id
-`GET` /api/motos/{id}
+- Atualizar
+  PUT /api/patios/{id}
+  ```json
+  {
+    "nome": "Pátio Mooca",
+    "endereco": "Rua do Oratório, 788"
+  }
+  ```
+- Deletar
+  DELETE /api/patios/{id}
 
-Mover Moto para um Pátio
-`POST` /api/motos/{id}/mover
+### Motos
+- Criar
+  POST /api/motos
+  ```json
+  {
+    "placa": "abc1d23",
+    "modelo": "Mottu 110i"
+  }
+  ```
+- Listar
+  GET /api/motos?page=1&pageSize=5
 
-```json
-{ "patioId": "<GUID do pátio>" }
-```
-Todos os endpoints podem ser exercitados via Swagger.
+- Obter por ID
+  GET /api/motos/{id}
+
+- Mover para Pátio
+  POST /api/motos/{id}/mover
+  ```json
+  {
+    "patioId": "PASTE_AQUI_O_GUID_DO_PATIO"
+  }
+  ```
+
+- Atualizar
+  PUT /api/motos/{id}
+  ```json
+  {
+    "modelo": "Mottu 125i",
+    "placa": "XYZ9A88"
+  }
+  ```
+- Deletar
+  DELETE /api/motos/{id}
 
 ## 🗃️ Persistência & Migrations
-EF Core 8 + Sqlite.
 
-Migration InitialCreate versionada em Infrastructure/Data/Migrations.
+  EF Core 8 + SQLite (dev)
 
-appsettings.json na API contém a connection string.
+  Azure SQL (cloud)
+
+  Migration InitialCreate e AddUsuarios em Infrastructure/Data/Migrations
+
+  Connection string configurável via appsettings.json ou variáveis de ambiente.
+
+## 📜 Swagger / OpenAPI
+
+  Swagger UI habilitado em Development.
+
+  Todos os endpoints documentados com:
+
+    [SwaggerOperation] (sumário/descrição)
+
+    [SwaggerRequestExample] (exemplos de payloads)
+
+    [ProducesResponseType] (status codes)
+
+  DTOs descritos automaticamente nos Schemas.
 
 ## 🧼 Clean Code
+
 SRP/DRY/KISS/YAGNI
 
-Controllers finos, uso de DTOs e handlers
+Controllers finos, DTOs + Handlers
 
 Nomes claros e métodos pequenos
 
-## 📝 Convenção de Commits
-feat: nova funcionalidade
+ExceptionMiddleware simples para tratar erros previsíveis (ex.: duplicidade → 409 Conflict).
 
-fix: correção
+## 📋 Testes
 
-chore: manutenção (ex.: .gitignore, tool manifest, migrations)
+O roteiro detalhado de testes da API está disponível em:  
+[/docs/MotoSecurityX-Challenge_.net_roteiro_de_testes.md](./docs/MotoSecurityX-Challenge_.net_roteiro_de_testes.md)
 
-refactor:, docs:, etc.
+## 📄 Licença
 
-Exemplos reais do repo:
-
-feat(api+infra): DI + Swagger + controllers; ajustes de mapeamento
-
-chore(repo): ignorar SQLite no .gitignore + adicionar manifest da tool e migrations
+Uso educacional/acadêmico.
 
 ## 🌟 Propósito
+
 “Código limpo sempre parece que foi escrito por alguém que se importa.” — Uncle Bob
